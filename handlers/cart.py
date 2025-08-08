@@ -4,6 +4,8 @@ import stripe
 import os
 from database import get_cart, clear_cart, remove_from_cart_db  # async DB funcs
 import json
+from telegram import Update
+from telegram.ext import ContextTypes
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # Set your Stripe secret key in env variable
 
@@ -88,8 +90,6 @@ async def place_order_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.reply_text("Order placement started! (Implement your flow here)")
 
 
-from telegram import Update
-from telegram.ext import ContextTypes
 
 async def contact_received(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
