@@ -9,7 +9,7 @@ database = Database(DATABASE_URL)
 
 conn = None
 
-async def connect_db():
+"""async def connect_db():
     global conn
     if conn is None:
         database_url = os.getenv("DATABASE_URL")
@@ -22,7 +22,7 @@ async def disconnect_db():
     if conn:
         await conn.close()
         conn = None
-        print("❌ Database disconnected.")
+        print("❌ Database disconnected.")"""
 
 
 CREATE_PRODUCTS_TABLE = """
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 """
 
-"""async def create_tables():
+async def create_tables():
     await database.execute(CREATE_PRODUCTS_TABLE)
     await database.execute(CREATE_USERS_TABLE)
     await database.execute(CREATE_CART_ITEMS_TABLE)
@@ -84,17 +84,7 @@ async def disconnect_db():
     global conn
     if conn:
         await conn.close()
-        conn = None"""
-
-
-
-
-async def create_tables():
-    await conn.execute(CREATE_PRODUCTS_TABLE)
-    await conn.execute(CREATE_USERS_TABLE)
-    await conn.execute(CREATE_CART_ITEMS_TABLE)
-    await conn.execute(CREATE_ORDERS_TABLE)
-    print("✅ Tables created or already exist.")
+        conn = None
 
 
 
