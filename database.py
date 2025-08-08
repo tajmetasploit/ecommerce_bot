@@ -79,13 +79,18 @@ async def create_tables():
     await conn.execute(CREATE_ORDERS_TABLE)
     print("✅ Tables created or already exist.")
 
+import os
+import asyncpg
+
+conn = None
+
 async def connect_db():
     global conn
     if conn is None:
-        if not DATABASE_URL:
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
             raise ValueError("❌ DATABASE_URL is not set in environment variables.")
-        conn = await asyncpg.connect(DATABASE_URL)
-        print("✅ Connected to database.")
+        conn = await asyncpg.connect(database_url)
 
 async def disconnect_db():
     global conn
