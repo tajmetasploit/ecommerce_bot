@@ -1,5 +1,2 @@
-modules = ["python-3.12"]
-
-[nix]
-channel = "stable-25_05"
-packages = ["cacert", "glibcLocales"]
+run = "pip install -r requirements.txt && python main.py"
+language = "python"
