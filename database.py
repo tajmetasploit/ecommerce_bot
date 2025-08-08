@@ -4,7 +4,7 @@ import asyncpg
 DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
 database = Database(DATABASE_URL)
 
-conn = None
+"""conn = None
 
 async def connect_db():
     global conn
@@ -21,6 +21,44 @@ async def disconnect_db():
     if conn:
         await conn.close()
         conn = None
+"""
+
+import os
+import asyncpg
+
+conn = None
+
+async def connect_db():
+    global conn
+    try:
+        # First try DATABASE_URL from environment
+        database_url = os.getenv("DATABASE_URL")
+
+        if database_url:
+            conn = await asyncpg.connect(database_url)
+            print("✅ Connected to database via DATABASE_URL")
+        else:
+            # Fallback to local PostgreSQL connection
+            conn = await asyncpg.connect(
+                user=os.getenv("DB_USER", "postgres"),
+                password=os.getenv("DB_PASSWORD", "password"),
+                database=os.getenv("DB_NAME", "ecommerce"),
+                host=os.getenv("DB_HOST", "localhost"),
+                port=int(os.getenv("DB_PORT", "5432"))
+            )
+            print("✅ Connected to local database")
+
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+        raise
+
+async def disconnect_db():
+    global conn
+    if conn:
+        await conn.close()
+        print("❌ Database disconnected")
+
+
 CREATE_PRODUCTS_TABLE = """
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
