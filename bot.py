@@ -6,7 +6,7 @@ from handlers.cart import register_cart_handlers
 from database import connect_db, disconnect_db, create_tables
 
 
-async def on_startup(app):
+"""async def on_startup(app):
     await connect_db()
     await create_tables()
     print("✅ Database connected and tables created.")
@@ -15,7 +15,13 @@ async def on_startup(app):
 async def on_shutdown(app):
     await disconnect_db()
     print("❌ Database disconnected.")
+"""
 
+async def on_startup(app):
+    await connect_db()
+
+async def on_shutdown(app):
+    await disconnect_db()
 
 def main():
     app = (
