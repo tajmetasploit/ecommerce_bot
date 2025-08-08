@@ -4,12 +4,15 @@ import asyncpg
 import os
 
 
-DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
+"""DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
 database = Database(DATABASE_URL)
+"""
 
-conn = None
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("❌ DATABASE_URL is not set in environment variables.")
 
-
+database = Database(DATABASE_URL)
 
 CREATE_PRODUCTS_TABLE = """
 CREATE TABLE IF NOT EXISTS products (
@@ -54,22 +57,13 @@ async def create_tables():
     await database.execute(CREATE_CART_ITEMS_TABLE)
     await database.execute(CREATE_ORDERS_TABLE)
 
-conn = None
-
 async def connect_db():
-    global conn
-    if conn is None:
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
-            raise ValueError("❌ DATABASE_URL is not set in environment variables.")
-        conn = await asyncpg.connect(database_url)
+    await database.connect()
+    print("✅ Database connected")
 
 async def disconnect_db():
-    global conn
-    if conn:
-        await conn.close()
-        conn = None
-        print("❌ Database disconnected.")
+    await database.disconnect()
+    print("❌ Database disconnected")
 
 
 
