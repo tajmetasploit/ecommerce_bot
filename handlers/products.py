@@ -1,7 +1,7 @@
 import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, filters, ContextTypes, CallbackQueryHandler
-from database import add_to_cart  # async function now
+from database import add_to_cart  # async function now!
 
 # Load products once
 with open('data/products.json', 'r') as f:
@@ -17,7 +17,6 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
             caption=f"🛍 {product['name']}\n💵 ${product['price']}",
             reply_markup=keyboard
         )
-
 
 async def show_product_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -37,14 +36,15 @@ async def show_product_details(update: Update, context: ContextTypes.DEFAULT_TYP
             reply_markup=keyboard
         )
 
-
 async def add_to_cart_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     product_id = query.data.replace("addcart_", "")
-    await add_to_cart(user_id, product_id)  # Await async DB function
-    await query.answer("Added to cart ✅", show_alert=True)
 
+    # Call async DB function to add to cart
+    await add_to_cart(user_id, int(product_id), quantity=1)
+
+    await query.answer("Added to cart ✅", show_alert=True)
 
 def register_product_handlers(app):
     app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🛍 Products"), show_products))
