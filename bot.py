@@ -4,7 +4,6 @@ from handlers.start import register_start_handlers
 from handlers.products import register_product_handlers
 from handlers.cart import register_cart_handlers
 from database import connect_db, disconnect_db, create_tables
-import asyncio
 
 
 async def on_startup(app):
@@ -19,20 +18,22 @@ async def on_shutdown(app):
 
 
 def main():
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).post_init(on_startup).build()
-
+    app = (
+        ApplicationBuilder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .post_init(on_startup)        # set startup callback here
+        .post_shutdown(on_shutdown)  # set shutdown callback here
+        .build()
+    )
 
     # Register handlers
     register_start_handlers(app)
     register_product_handlers(app)
     register_cart_handlers(app)
 
-    # Add startup and shutdown callbacks
-    app.post_init.append(on_startup)
-    app.post_shutdown.append(on_shutdown)
-
     app.run_polling()
 
 
 if __name__ == '__main__':
     main()
+
