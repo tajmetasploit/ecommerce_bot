@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 """
 
-async def create_tables():
+"""async def create_tables():
     await database.execute(CREATE_PRODUCTS_TABLE)
     await database.execute(CREATE_USERS_TABLE)
     await database.execute(CREATE_CART_ITEMS_TABLE)
@@ -64,7 +64,35 @@ async def disconnect_db():
     global conn
     if conn:
         await conn.close()
+        conn = None"""
+
+import asyncpg
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL")  # e.g. postgres://user:pass@host:port/dbname
+conn = None
+
+async def create_tables():
+    await conn.execute(CREATE_PRODUCTS_TABLE)
+    await conn.execute(CREATE_USERS_TABLE)
+    await conn.execute(CREATE_CART_ITEMS_TABLE)
+    await conn.execute(CREATE_ORDERS_TABLE)
+    print("✅ Tables created or already exist.")
+
+async def connect_db():
+    global conn
+    if conn is None:
+        if not DATABASE_URL:
+            raise ValueError("❌ DATABASE_URL is not set in environment variables.")
+        conn = await asyncpg.connect(DATABASE_URL)
+        print("✅ Connected to database.")
+
+async def disconnect_db():
+    global conn
+    if conn:
+        await conn.close()
         conn = None
+        print("❌ Database disconnected.")
 
 
 async def add_user_if_not_exists(telegram_id: int):
