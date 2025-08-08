@@ -1,9 +1,7 @@
-# handlers/products.py
 import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, filters, ContextTypes, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from database import add_to_cart
+from database import add_to_cart  # async function now
 
 # Load products once
 with open('data/products.json', 'r') as f:
@@ -26,7 +24,7 @@ async def show_product_details(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     product_id = query.data.replace("product_", "")
-    product = next((p for p in PRODUCTS if p["id"] == product_id), None)
+    product = next((p for p in PRODUCTS if str(p["id"]) == product_id), None)
 
     if product:
         keyboard = InlineKeyboardMarkup([
@@ -40,15 +38,15 @@ async def show_product_details(update: Update, context: ContextTypes.DEFAULT_TYP
         )
 
 
-def register_product_handlers(app):
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🛍 Products"), show_products))
-    app.add_handler(CallbackQueryHandler(show_product_details, pattern="^product_"))
-    app.add_handler(CallbackQueryHandler(add_to_cart_callback, pattern="^addcart_"))
-
-
 async def add_to_cart_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     product_id = query.data.replace("addcart_", "")
-    add_to_cart(user_id, product_id)
+    await add_to_cart(user_id, product_id)  # Await async DB function
     await query.answer("Added to cart ✅", show_alert=True)
+
+
+def register_product_handlers(app):
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🛍 Products"), show_products))
+    app.add_handler(CallbackQueryHandler(show_product_details, pattern="^product_"))
+    app.add_handler(CallbackQueryHandler(add_to_cart_callback, pattern="^addcart_"))
