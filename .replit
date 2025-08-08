@@ -1,4 +1,4 @@
-run = "python3 -m pip install -r requirements.txt && git pull origin main && python main.py && python3 bot.py"
+run = "git pull origin main && python main.py && python3 bot.py"
 
 language = "python3"
 
