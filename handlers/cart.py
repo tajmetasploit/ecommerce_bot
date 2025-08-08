@@ -72,6 +72,8 @@ def register_cart_handlers(app):
     app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🛒 Cart"), view_cart))
     app.add_handler(CallbackQueryHandler(remove_from_cart, pattern="^remove_"))
     app.add_handler(CallbackQueryHandler(clear_cart_callback, pattern="^clear_cart"))
+    app.add_handler(MessageHandler(filters.CONTACT, contact_received))
+
 
     conv_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(place_order_start, pattern="^place_order$")],
