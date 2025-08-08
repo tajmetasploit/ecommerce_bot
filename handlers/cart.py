@@ -87,3 +87,16 @@ async def place_order_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Implement logic for starting the order placement (e.g., confirm order, payment options)
     await query.message.reply_text("Order placement started! (Implement your flow here)")
 
+
+from telegram import Update
+from telegram.ext import ContextTypes
+
+async def contact_received(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    contact = update.message.contact
+    user_id = update.effective_user.id
+    
+    # For example, save the contact info or reply back:
+    await update.message.reply_text(f"Thanks for sharing your contact: {contact.phone_number}")
+    
+    # Here you could store the contact info to DB or proceed with further flow
+
