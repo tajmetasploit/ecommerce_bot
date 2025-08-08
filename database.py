@@ -7,6 +7,7 @@ import os
 DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
 database = Database(DATABASE_URL)
 
+conn = None
 
 async def connect_db():
     global conn
