@@ -9,20 +9,6 @@ database = Database(DATABASE_URL)
 
 conn = None
 
-"""async def connect_db():
-    global conn
-    if conn is None:
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
-            raise ValueError("❌ DATABASE_URL is not set in environment variables.")
-        conn = await asyncpg.connect(database_url)
-
-async def disconnect_db():
-    global conn
-    if conn:
-        await conn.close()
-        conn = None
-        print("❌ Database disconnected.")"""
 
 
 CREATE_PRODUCTS_TABLE = """
@@ -73,18 +59,17 @@ conn = None
 async def connect_db():
     global conn
     if conn is None:
-        conn = await asyncpg.connect(
-            user="postgres",
-            password="password",
-            database="ecommerce",
-            host="localhost"
-        )
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise ValueError("❌ DATABASE_URL is not set in environment variables.")
+        conn = await asyncpg.connect(database_url)
 
 async def disconnect_db():
     global conn
     if conn:
         await conn.close()
         conn = None
+        print("❌ Database disconnected.")
 
 
 
