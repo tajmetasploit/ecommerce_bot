@@ -14,6 +14,9 @@ if not DATABASE_URL:
 
 database = Database(DATABASE_URL)
 """
+
+conn = None
+
 CREATE_PRODUCTS_TABLE = """
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
