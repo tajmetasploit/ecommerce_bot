@@ -2,28 +2,47 @@ import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from database import add_to_cart  # async function now!
+from database import get_all_products
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
+from telegram.ext import ContextTypes
+
 
 # Load products once
 with open('data/products.json', 'r') as f:
     PRODUCTS = json.load(f)
 
+
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    for product in PRODUCTS:
+    products = await get_all_products()
+
+    if not products:
+        await update.message.reply_text("No products available right now.")
+        return
+
+    for product in products:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("View Details", callback_data=f"product_{product['id']}")]
         ])
-        await update.message.reply_photo(
-            photo=product['photo'],
-            caption=f"🛍 {product['name']}\n💵 ${product['price']}",
-            reply_markup=keyboard
-        )
+        try:
+            await update.message.reply_photo(
+                photo=product['photo'],  # must be a valid URL
+                caption=f"🛍 {product['name']}\n💵 ${product['price']}",
+                reply_markup=keyboard
+            )
+        except Exception as e:
+            await update.message.reply_text(
+                f"{product['name']} - unable to load image.\n💵 ${product['price']}"
+            )
+            print(f"Error sending photo for product {product['id']} ({product['photo']}): {e}")
 
 async def show_product_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     product_id = query.data.replace("product_", "")
-    product = next((p for p in PRODUCTS if str(p["id"]) == product_id), None)
+
+    products = await get_all_products()
+    product = next((p for p in products if str(p["id"]) == product_id), None)
 
     if product:
         keyboard = InlineKeyboardMarkup([
@@ -35,6 +54,7 @@ async def show_product_details(update: Update, context: ContextTypes.DEFAULT_TYP
             parse_mode='Markdown',
             reply_markup=keyboard
         )
+
 
 async def add_to_cart_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
