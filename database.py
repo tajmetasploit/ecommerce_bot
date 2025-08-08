@@ -48,13 +48,24 @@ async def create_tables():
     await database.execute(CREATE_ORDERS_TABLE)
 
 
+
+conn = None
+
 async def connect_db():
-    if not database.is_connected:
-        await database.connect()
+    global conn
+    if conn is None:
+        conn = await asyncpg.connect(
+            user="postgres",
+            password="password",
+            database="ecommerce",
+            host="localhost"
+        )
 
 async def disconnect_db():
-    if database.is_connected:
-        await database.disconnect()
+    global conn
+    if conn:
+        await conn.close()
+        conn = None
 
 
 async def add_user_if_not_exists(telegram_id: int):
