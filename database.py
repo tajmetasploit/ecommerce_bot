@@ -1,8 +1,27 @@
 from databases import Database
 import asyncpg
+import asyncpg
+import os
+
 
 DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
 database = Database(DATABASE_URL)
+
+
+async def connect_db():
+    global conn
+    if conn is None:
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise ValueError("❌ DATABASE_URL is not set in environment variables.")
+        conn = await asyncpg.connect(database_url)
+
+async def disconnect_db():
+    global conn
+    if conn:
+        await conn.close()
+        conn = None
+        print("❌ Database disconnected.")
 
 
 CREATE_PRODUCTS_TABLE = """
@@ -66,11 +85,8 @@ async def disconnect_db():
         await conn.close()
         conn = None"""
 
-import asyncpg
-import os
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # e.g. postgres://user:pass@host:port/dbname
-conn = None
+
 
 async def create_tables():
     await conn.execute(CREATE_PRODUCTS_TABLE)
@@ -79,25 +95,6 @@ async def create_tables():
     await conn.execute(CREATE_ORDERS_TABLE)
     print("✅ Tables created or already exist.")
 
-import os
-import asyncpg
-
-conn = None
-
-async def connect_db():
-    global conn
-    if conn is None:
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
-            raise ValueError("❌ DATABASE_URL is not set in environment variables.")
-        conn = await asyncpg.connect(database_url)
-
-async def disconnect_db():
-    global conn
-    if conn:
-        await conn.close()
-        conn = None
-        print("❌ Database disconnected.")
 
 
 async def add_user_if_not_exists(telegram_id: int):
