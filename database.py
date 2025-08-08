@@ -1,119 +1,140 @@
-import databases
-import sqlalchemy
+from databases import Database
 
 DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
+database = Database(DATABASE_URL)
 
-database = databases.Database(DATABASE_URL)
-metadata = sqlalchemy.MetaData()
+CREATE_PRODUCTS_TABLE = """
+CREATE TABLE IF NOT EXISTS products (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL,
+    photo_url TEXT,
+    stock INTEGER DEFAULT 0
+);
+"""
 
-# Define tables with SQLAlchemy for better integration (optional but recommended)
-products = sqlalchemy.Table(
-    "products", metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("name", sqlalchemy.String, nullable=False),
-    sqlalchemy.Column("description", sqlalchemy.Text),
-    sqlalchemy.Column("price", sqlalchemy.Numeric(10, 2), nullable=False),
-    sqlalchemy.Column("photo_url", sqlalchemy.String),
-    sqlalchemy.Column("stock", sqlalchemy.Integer, default=0),
-)
+CREATE_USERS_TABLE = """
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    telegram_id BIGINT UNIQUE NOT NULL
+);
+"""
 
-users = sqlalchemy.Table(
-    "users", metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("telegram_id", sqlalchemy.BigInteger, unique=True, nullable=False),
-)
+CREATE_CART_ITEMS_TABLE = """
+CREATE TABLE IF NOT EXISTS cart_items (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+    quantity INTEGER DEFAULT 1
+);
+"""
 
-cart_items = sqlalchemy.Table(
-    "cart_items", metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("user_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE")),
-    sqlalchemy.Column("product_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("products.id", ondelete="CASCADE")),
-    sqlalchemy.Column("quantity", sqlalchemy.Integer, default=1),
-)
+CREATE_ORDERS_TABLE = """
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    status TEXT DEFAULT 'pending',
+    total_amount NUMERIC(10, 2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
 
-orders = sqlalchemy.Table(
-    "orders", metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("user_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id")),
-    sqlalchemy.Column("status", sqlalchemy.String, default="pending"),
-    sqlalchemy.Column("total_amount", sqlalchemy.Numeric(10, 2)),
-    sqlalchemy.Column("created_at", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
-)
+async def create_tables():
+    await database.execute(CREATE_PRODUCTS_TABLE)
+    await database.execute(CREATE_USERS_TABLE)
+    await database.execute(CREATE_CART_ITEMS_TABLE)
+    await database.execute(CREATE_ORDERS_TABLE)
 
-# Create an engine for table creation (sync)
-engine = sqlalchemy.create_engine(DATABASE_URL)
-
-def create_tables():
-    metadata.create_all(engine)
 
 async def connect_db():
-    await database.connect()
+    if not database.is_connected:
+        await database.connect()
 
 async def disconnect_db():
-    await database.disconnect()
+    if database.is_connected:
+        await database.disconnect()
 
-# Async cart functions example
+
+async def add_user_if_not_exists(telegram_id: int):
+    """Add user to users table if not exists"""
+    query = "INSERT INTO users (telegram_id) VALUES (:telegram_id) ON CONFLICT (telegram_id) DO NOTHING"
+    await database.execute(query, values={"telegram_id": telegram_id})
+
 
 async def add_to_cart(user_telegram_id: int, product_id: int, quantity: int = 1):
-    # Ensure user exists or create user
-    query_user = users.select().where(users.c.telegram_id == user_telegram_id)
-    user = await database.fetch_one(query_user)
-    if not user:
-        query_insert = users.insert().values(telegram_id=user_telegram_id)
-        user_id = await database.execute(query_insert)
-    else:
-        user_id = user.id
+    await connect_db()
+    # Ensure user exists
+    await add_user_if_not_exists(user_telegram_id)
 
-    # Check if cart item exists
-    query_cart = cart_items.select().where(
-        (cart_items.c.user_id == user_id) & (cart_items.c.product_id == product_id)
-    )
-    cart_item = await database.fetch_one(query_cart)
+    # Get user internal id
+    query_user = "SELECT id FROM users WHERE telegram_id = :telegram_id"
+    user = await database.fetch_one(query_user, values={"telegram_id": user_telegram_id})
+    user_id = user["id"]
+
+    # Check if product already in cart
+    query_check = """
+    SELECT id, quantity FROM cart_items
+    WHERE user_id = :user_id AND product_id = :product_id
+    """
+    cart_item = await database.fetch_one(query_check, values={"user_id": user_id, "product_id": product_id})
+
     if cart_item:
         # Update quantity
-        query_update = cart_items.update().where(cart_items.c.id == cart_item.id).values(
-            quantity=cart_item.quantity + quantity
-        )
-        await database.execute(query_update)
+        new_quantity = cart_item["quantity"] + quantity
+        query_update = """
+        UPDATE cart_items SET quantity = :quantity WHERE id = :id
+        """
+        await database.execute(query_update, values={"quantity": new_quantity, "id": cart_item["id"]})
     else:
-        # Insert new cart item
-        query_insert = cart_items.insert().values(
-            user_id=user_id,
-            product_id=product_id,
-            quantity=quantity
-        )
-        await database.execute(query_insert)
+        # Insert new item
+        query_insert = """
+        INSERT INTO cart_items (user_id, product_id, quantity) VALUES (:user_id, :product_id, :quantity)
+        """
+        await database.execute(query_insert, values={"user_id": user_id, "product_id": product_id, "quantity": quantity})
+
 
 async def get_cart(user_telegram_id: int):
-    query_user = users.select().where(users.c.telegram_id == user_telegram_id)
-    user = await database.fetch_one(query_user)
+    await connect_db()
+    query_user = "SELECT id FROM users WHERE telegram_id = :telegram_id"
+    user = await database.fetch_one(query_user, values={"telegram_id": user_telegram_id})
     if not user:
         return []
 
-    query = (
-        cart_items.join(products, cart_items.c.product_id == products.c.id)
-        .select()
-        .with_only_columns(
-            [products.c.id, products.c.name, products.c.price, cart_items.c.quantity]
-        )
-        .where(cart_items.c.user_id == user.id)
-    )
-    # Above is SQLAlchemy Core select statement, databases doesn't support join().select() directly
-    # So let's do it with raw SQL for simplicity:
+    user_id = user["id"]
 
-    sql = """
-    SELECT p.id, p.name, p.price, ci.quantity
-    FROM cart_items ci
-    JOIN products p ON ci.product_id = p.id
-    WHERE ci.user_id = :user_id
+    query = """
+    SELECT product_id, quantity FROM cart_items
+    WHERE user_id = :user_id
     """
+    rows = await database.fetch_all(query, values={"user_id": user_id})
+    return [{"product_id": row["product_id"], "quantity": row["quantity"]} for row in rows]
 
-    rows = await database.fetch_all(sql, values={"user_id": user.id})
-    return rows
+
+async def remove_from_cart(user_telegram_id: int, product_id: int):
+    await connect_db()
+    query_user = "SELECT id FROM users WHERE telegram_id = :telegram_id"
+    user = await database.fetch_one(query_user, values={"telegram_id": user_telegram_id})
+    if not user:
+        return
+    user_id = user["id"]
+
+    query = """
+    DELETE FROM cart_items
+    WHERE user_id = :user_id AND product_id = :product_id
+    """
+    await database.execute(query, values={"user_id": user_id, "product_id": product_id})
+
 
 async def clear_cart(user_telegram_id: int):
-    query_user = users.select().where(users.c.telegram_id == user_telegram_id)
-    user = await database.fetch_one(query_user)
-    if user:
-        query_delete = cart_items.delete().where(cart_items.c.user_id == user.id)
-        await database.execute(query_delete)
+    await connect_db()
+    query_user = "SELECT id FROM users WHERE telegram_id = :telegram_id"
+    user = await database.fetch_one(query_user, values={"telegram_id": user_telegram_id})
+    if not user:
+        return
+    user_id = user["id"]
+
+    query = """
+    DELETE FROM cart_items WHERE user_id = :user_id
+    """
+    await database.execute(query, values={"user_id": user_id})
