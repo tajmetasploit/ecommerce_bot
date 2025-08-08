@@ -19,7 +19,8 @@ async def on_shutdown(app):
 
 
 def main():
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).post_init(on_startup).build()
+
 
     # Register handlers
     register_start_handlers(app)
