@@ -161,18 +161,10 @@ async def remove_from_cart_db(user_id: int, product_id: int):
 
 
 async def get_all_products():
-    conn = await connect_db()
-    rows = await conn.fetch("SELECT id, name, description, price, photo_url, stock FROM products")
-    await conn.close()
-
-    products = []
-    for row in rows:
-        products.append({
-            "id": row["id"],
-            "name": row["name"],
-            "description": row["description"],
-            "price": row["price"],
-            "photo": row["photo_url"],  # map DB column to 'photo' for Telegram
-            "stock": row["stock"]
-        })
-    return products
+    global conn
+    if conn is None:
+        raise RuntimeError("Database is not connected")
+    rows = await conn.fetch(
+        "SELECT id, name, description, price, photo_url, stock FROM products"
+    )
+    return rows
