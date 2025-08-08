@@ -103,3 +103,17 @@ async def clear_cart(telegram_id: int):
     user_id = await get_or_create_user(telegram_id)
     query = "DELETE FROM cart_items WHERE user_id = :user_id"
     await database.execute(query=query, values={"user_id": user_id})
+
+async def remove_cart_item(telegram_id: int, product_id: int):
+    user_id = await get_or_create_user(telegram_id)
+    # First check quantity
+    query = "SELECT quantity, id FROM cart_items WHERE user_id = :user_id AND product_id = :product_id"
+    item = await database.fetch_one(query=query, values={"user_id": user_id, "product_id": product_id})
+
+    if item:
+        if item["quantity"] > 1:
+            update_query = "UPDATE cart_items SET quantity = quantity - 1 WHERE id = :id"
+            await database.execute(update_query, values={"id": item["id"]})
+        else:
+            delete_query = "DELETE FROM cart_items WHERE id = :id"
+            await database.execute(delete_query, values={"id": item["id"]})
