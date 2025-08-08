@@ -1,5 +1,10 @@
+run = "python3 -m pip install -r requirements.txt && git pull origin main && python main.py && python3 bot.py"
+
+language = "python3"
+
 modules = ["python-3.12"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["cacert", "glibcLocales"]
+packages = ["cacert", "glibcLocales", "python312", "python312Packages.pip"]
+
