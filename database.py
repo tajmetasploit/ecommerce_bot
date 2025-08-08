@@ -4,16 +4,16 @@ import asyncpg
 import os
 
 
-"""DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
+DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
 database = Database(DATABASE_URL)
-"""
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+
+"""DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("❌ DATABASE_URL is not set in environment variables.")
 
 database = Database(DATABASE_URL)
-
+"""
 CREATE_PRODUCTS_TABLE = """
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
