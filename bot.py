@@ -9,12 +9,12 @@ from database import connect_db, disconnect_db, create_tables
 async def on_startup(app):
     await connect_db()
     await create_tables()
-    print("Database connected and tables created.")
+    print("✅ Database connected and tables created.")
 
 
 async def on_shutdown(app):
     await disconnect_db()
-    print("Database disconnected.")
+    print("❌ Database disconnected.")
 
 
 def main():
