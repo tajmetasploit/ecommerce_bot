@@ -4,6 +4,23 @@ import asyncpg
 DATABASE_URL = "postgresql://postgres:BIePlnsvfFRTrKvtATsiPzuqoGKTFZHj@metro.proxy.rlwy.net:23356/railway"
 database = Database(DATABASE_URL)
 
+conn = None
+
+async def connect_db():
+    global conn
+    if conn is None:
+        conn = await asyncpg.connect(
+            user="postgres",
+            password="password",
+            database="ecommerce",
+            host="localhost"
+        )
+
+async def disconnect_db():
+    global conn
+    if conn:
+        await conn.close()
+        conn = None
 CREATE_PRODUCTS_TABLE = """
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
@@ -46,26 +63,6 @@ async def create_tables():
     await database.execute(CREATE_USERS_TABLE)
     await database.execute(CREATE_CART_ITEMS_TABLE)
     await database.execute(CREATE_ORDERS_TABLE)
-
-
-
-conn = None
-
-async def connect_db():
-    global conn
-    if conn is None:
-        conn = await asyncpg.connect(
-            user="postgres",
-            password="password",
-            database="ecommerce",
-            host="localhost"
-        )
-
-async def disconnect_db():
-    global conn
-    if conn:
-        await conn.close()
-        conn = None
 
 
 async def add_user_if_not_exists(telegram_id: int):
