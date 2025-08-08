@@ -138,3 +138,11 @@ async def clear_cart(user_telegram_id: int):
     DELETE FROM cart_items WHERE user_id = :user_id
     """
     await database.execute(query, values={"user_id": user_id})
+
+async def remove_from_cart_db(user_id: int, product_id: int):
+    query = """
+    DELETE FROM cart_items
+    WHERE user_id = (SELECT id FROM users WHERE telegram_id = $1)
+      AND product_id = $2
+    """
+    await database.execute(query, user_id, int(product_id))
